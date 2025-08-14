@@ -6,6 +6,7 @@ import {
   Alert,
   Platform,
   PermissionsAndroid,
+  ScrollView,
   FlatList,
 } from 'react-native';
 import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
@@ -90,7 +91,9 @@ const App: React.FC = () => {
     includeScore: true,
   };
   const [currSlideIdx, setCurrSlideIdx] = useState<number>(0);
-  let wordIdx = {left: 0, right: 1, groupStart: 0};
+  const scrollViewRef = useRef<(ScrollView | null)[]>([]);
+  const textPositionsRef = useRef<number[][]>([[]]);
+  const wordIdx = useRef({left: 0, right: 1, groupStart: 0})
 
   const updateColorMemo = (
     slideIdx: number,
@@ -120,12 +123,27 @@ const App: React.FC = () => {
   useEffect(() => {
     axios.post(`http://${localip}:${port}/getScript`)
       .then((res: any) => {
-        setScriptData(res?.data)
+        setScriptData(res?.data);
+        textPositionsRef.current = Array.from({ length: res?.data.length }, () => ([]));
+        scrollViewRef.current = Array.from({ length: res?.data.length }, () => (null));
         setColorMemo(Array.from({length: res?.data.length}, () => []))
         console.log('getScript success: ', res?.data)
       })
       .catch((e) => console.error(e))
   }, []);
+
+  //ScrollTo
+  useEffect(() => {
+    console.log(scrollViewRef.current)
+    if (scrollViewRef.current && scrollViewRef.current[currSlideIdx]) {
+      console.log('scrollTo: ', textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart])
+      console.log(scrollViewRef.current)
+      scrollViewRef.current[currSlideIdx].scrollTo({
+        y: textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart],
+        animated: true
+      })
+    }
+  },[wordIdx.current.groupStart])
 
   const getWordsNo = (phrase: string) => {
     const visualWords = phrase.trim().split(/\s+/);
@@ -137,7 +155,7 @@ const App: React.FC = () => {
 
   const groupWords = (idx: number, length: number) => {
     let res = [];
-    for (let i = 0; i < scriptData[idx].compare.length; ++i) {
+    for (let i = wordIdx.current.groupStart; i < scriptData[idx].compare.length; ++i) {
       const phrase = scriptData[idx].compare.slice(i, i + length).join(' ');
       res.push({
         phrase: phrase,
@@ -215,7 +233,7 @@ const App: React.FC = () => {
       const len = getWordsNo(res);
       const candidates = groupWords(currSlideIdx, len);
       console.log(candidates)
-      if (len > 2) {
+      if (len > 2 && candidates.length > 0) {
         // ipconfig getifaddr en0
         axios
           .post(`http://${localip}:${port}/matchScript`, {
@@ -226,11 +244,11 @@ const App: React.FC = () => {
           .then(res => {
             if (res.status === 200) {
               const end = res.data.text.end
-              updateColorMemo(currSlideIdx, wordIdx.groupStart, end, 'green');
-              console.log(res?.data, wordIdx.groupStart, end);
-              wordIdx.groupStart = end
-              wordIdx.left = wordIdx.groupStart
-              wordIdx.right = wordIdx.left + 1
+              updateColorMemo(currSlideIdx, wordIdx.current.groupStart, end, 'green');
+              console.log(res?.data, wordIdx.current.groupStart, end);
+              wordIdx.current.groupStart = end
+              wordIdx.current.left = wordIdx.current.groupStart
+              wordIdx.current.right = wordIdx.current.left + 1
             }
           })
           .catch(e => {
@@ -240,24 +258,24 @@ const App: React.FC = () => {
     });
 
     const partialResultEvent = vosk.onPartialResult((res: any) => {
-      console.log('partialResult: ', res);
-      const closest = searchInScript(currSlideIdx, wordIdx, res?.text);
+      console.log('partialResult: ', res, wordIdx.current);
+      const closest = searchInScript(currSlideIdx, wordIdx.current, res?.text);
       if (closest) {
         let color = 'red';
         if (closest.score === 0) {
           color = 'green';
         }
-        if (closest.refIndex <= wordIdx.right) {
+        if (closest.refIndex <= wordIdx.current.right) {
           updateColorMemo(
             currSlideIdx,
             closest.refIndex,
             closest.refIndex + 1,
             color,
           );
-          wordIdx.left = closest.refIndex + 1;
-          wordIdx.right = closest.refIndex + 1;
+          wordIdx.current.left = closest.refIndex + 1;
+          wordIdx.current.right = closest.refIndex + 1;
         } else {
-          wordIdx.right = wordIdx.right + 1;
+          wordIdx.current.right = wordIdx.current.right + 1;
         }
       }
     });
@@ -291,9 +309,9 @@ const App: React.FC = () => {
           <ScriptSlide
             id={item.id}
             visual={item.visual}
-            colorMemo={colorMemo}
             getColorMemo={getColorMemo}
-            groupStart={wordIdx.groupStart}
+            scrollViewRef={scrollViewRef.current}
+            textPositionsRef={textPositionsRef.current}
           />
         )}
         pagingEnabled={true}

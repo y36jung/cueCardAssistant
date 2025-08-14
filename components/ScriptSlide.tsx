@@ -1,56 +1,61 @@
-import {View, Text, StyleSheet, Dimensions, ScrollView, FlatList, ActivityIndicator} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import React, {useEffect, useState, useRef} from 'react';
 
 interface ScriptSlideProps {
   id: number;
   visual: string[];
-  colorMemo: string[][] | undefined;
-  getColorMemo: (slideIdx: number, wordIdx: number) => string
-  groupStart: number
+  getColorMemo: (slideIdx: number, wordIdx: number) => string;
+  scrollViewRef: (ScrollView | null)[];
+  textPositionsRef: number[][]
 }
 
 const {height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-const ScriptSlide: React.FC<ScriptSlideProps> = ({id, visual, colorMemo, getColorMemo, groupStart}) => {
-  const scrollViewRef = useRef(null)
-  const textPositionsRef = useRef<any>({})
-
-  useEffect(() => {
-      console.log('groupStart: ', textPositionsRef.current[groupStart])
-  },[groupStart])
-
+const ScriptSlide: React.FC<ScriptSlideProps> = ({
+  id,
+  visual,
+  getColorMemo,
+  scrollViewRef,
+  textPositionsRef
+}) => {
+  
   return (
     <View style={styles.container}>
-      { visual ? (
+      {visual ? (
         <>
-          <Text style={styles.slideHeader}>{`Slide ${id+1}`}</Text>
+          <Text style={styles.slideHeader}>{`Slide ${id + 1}`}</Text>
           <View style={styles.scrollContainer}>
             <ScrollView
-              ref={scrollViewRef}
+              ref={(el) => {scrollViewRef[id]= el}}
               contentContainerStyle={styles.scrollContent}
               horizontal={false}
               nestedScrollEnabled={true} // android only
             >
-              <Text
-                style={styles.scriptText}
-              >
+              <View style={styles.textContainer}>
                 {visual.map((word, idx) => (
-                    <Text
-                      key={idx}
-                      style={{color: getColorMemo(id, idx)}}
-                      onLayout={(e) => {
-                        textPositionsRef.current[idx] = e.nativeEvent.layout.y
-                      }}
-                    >
-                      {word}
-                    </Text>
+                  <Text
+                    key={idx}
+                    style={{...styles.scriptText, color: getColorMemo(id, idx)}}
+                    onLayout={e => {
+                      textPositionsRef[id][idx] = e.nativeEvent.layout.y
+                    }}>
+                    {word}
+                  </Text>
                 ))}
-                </Text>
+              </View>
             </ScrollView>
           </View>
         </>
       ) : (
-        <ActivityIndicator/>
+        <ActivityIndicator />
       )}
     </View>
   );
@@ -59,6 +64,12 @@ const ScriptSlide: React.FC<ScriptSlideProps> = ({id, visual, colorMemo, getColo
 const styles = StyleSheet.create({
   container: {
     flex: 1, // Fill parent (FlatList page)
+  },
+  textContainer: {
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+    paddingLeft: 7,
+    paddingRight: 7
   },
   slideHeader: {
     fontSize: 40,
@@ -70,12 +81,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scriptText: {
-    paddingLeft: 7,
-    paddingRight: 7,
-    fontSize: 20
+    fontSize: 20,
   },
-
-  
 });
 
 export default ScriptSlide;
