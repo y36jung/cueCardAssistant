@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef, useCallback} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   View,
   StyleSheet,
@@ -9,17 +9,13 @@ import {
   ScrollView,
   FlatList,
 } from 'react-native';
-import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
-
+//import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import ScriptSlide from './components/ScriptSlide.tsx';
-
 import Fuse from 'fuse.js';
-
 import Vosk from 'react-native-vosk';
-
 import axios from 'axios';
+import {localip} from './importantID.js';
 
-import { localip, port } from './importantID.js';
 /*
 Design for Script Matching
 - Receive script data
@@ -91,9 +87,10 @@ const App: React.FC = () => {
     includeScore: true,
   };
   const [currSlideIdx, setCurrSlideIdx] = useState<number>(0);
+  const flatListRef = useRef<FlatList | null>(null);
   const scrollViewRef = useRef<(ScrollView | null)[]>([]);
   const textPositionsRef = useRef<number[][]>([[]]);
-  const wordIdx = useRef({left: 0, right: 1, groupStart: 0})
+  const wordIdx = useRef({left: 0, right: 1, groupStart: 0});
 
   const updateColorMemo = (
     slideIdx: number,
@@ -121,29 +118,49 @@ const App: React.FC = () => {
 
   // Fetch script data
   useEffect(() => {
-    axios.post(`http://${localip}:${port}/getScript`)
+    axios
+      .post(`http://${localip}:8000/getScript`)
       .then((res: any) => {
         setScriptData(res?.data);
-        textPositionsRef.current = Array.from({ length: res?.data.length }, () => ([]));
-        scrollViewRef.current = Array.from({ length: res?.data.length }, () => (null));
-        setColorMemo(Array.from({length: res?.data.length}, () => []))
-        console.log('getScript success: ', res?.data)
+        textPositionsRef.current = Array.from(
+          {length: res?.data.length},
+          () => [],
+        );
+        scrollViewRef.current = Array.from(
+          {length: res?.data.length},
+          () => null,
+        );
+        setColorMemo(Array.from({length: res?.data.length}, () => []));
+        console.log('getScript success: ', res?.data);
       })
-      .catch((e) => console.error(e))
+      .catch(e => console.error(e));
   }, []);
 
   //ScrollTo
   useEffect(() => {
-    console.log(scrollViewRef.current)
-    if (scrollViewRef.current && scrollViewRef.current[currSlideIdx]) {
-      console.log('scrollTo: ', textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart])
-      console.log(scrollViewRef.current)
-      scrollViewRef.current[currSlideIdx].scrollTo({
-        y: textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart],
-        animated: true
-      })
+    console.log(scrollViewRef.current[currSlideIdx+1], textPositionsRef.current, wordIdx.current);
+    if (startVosk && scrollViewRef.current && scrollViewRef.current[currSlideIdx]) {
+      if (wordIdx.current.groupStart >= textPositionsRef.current[currSlideIdx].length) {
+        wordIdx.current = {left: 0, right: 1, groupStart: 0}
+        flatListRef.current?.scrollToIndex({
+          index: currSlideIdx+1,
+          animated: true,
+        });
+        setCurrSlideIdx(prev => (prev+1))
+        console.log('next slide: ', currSlideIdx)
+      } else {
+        console.log(
+          'scrollTo: ',
+          textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart]
+        );
+        console.log(scrollViewRef.current);
+        scrollViewRef.current[currSlideIdx].scrollTo({
+          y: textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart],
+          animated: true,
+        });
+      }
     }
-  },[wordIdx.current.groupStart])
+  }, [wordIdx.current.groupStart]);
 
   const getWordsNo = (phrase: string) => {
     const visualWords = phrase.trim().split(/\s+/);
@@ -155,7 +172,9 @@ const App: React.FC = () => {
 
   const groupWords = (idx: number, length: number) => {
     let res = [];
-    for (let i = wordIdx.current.groupStart; i < scriptData[idx].compare.length; ++i) {
+    const start = Math.min(wordIdx.current.left, wordIdx.current.groupStart);
+    const end = Math.min(wordIdx.current.right, scriptData[idx].compare.length);
+    for (let i = start; i < end; ++i) {
       const phrase = scriptData[idx].compare.slice(i, i + length).join(' ');
       res.push({
         phrase: phrase,
@@ -232,23 +251,29 @@ const App: React.FC = () => {
     const resultEvent = vosk.onResult(async res => {
       const len = getWordsNo(res);
       const candidates = groupWords(currSlideIdx, len);
-      console.log(candidates)
+      console.log(candidates);
       if (len > 2 && candidates.length > 0) {
-        // ipconfig getifaddr en0
         axios
-          .post(`http://${localip}:${port}/matchScript`, {
+          .post(`http://${localip}:8000/matchScript`, {
             actual: res,
             candidates: JSON.stringify(candidates),
-            threshold: 0.9
+            threshold: 0.9,
           })
           .then(res => {
             if (res.status === 200) {
-              const end = res.data.text.end
-              updateColorMemo(currSlideIdx, wordIdx.current.groupStart, end, 'green');
+              const end = res.data.text.end;
+              updateColorMemo(
+                currSlideIdx,
+                wordIdx.current.groupStart,
+                end,
+                'green',
+              );
               console.log(res?.data, wordIdx.current.groupStart, end);
-              wordIdx.current.groupStart = end
-              wordIdx.current.left = wordIdx.current.groupStart
-              wordIdx.current.right = wordIdx.current.left + 1
+              wordIdx.current.groupStart = end;
+              wordIdx.current.left = end;
+              if (wordIdx.current.right < end) {
+                wordIdx.current.right = end + 1;
+              }
             }
           })
           .catch(e => {
@@ -263,19 +288,16 @@ const App: React.FC = () => {
       if (closest) {
         let color = 'red';
         if (closest.score === 0) {
-          color = 'green';
+          color = 'orange';
         }
-        if (closest.refIndex <= wordIdx.current.right) {
-          updateColorMemo(
-            currSlideIdx,
-            closest.refIndex,
-            closest.refIndex + 1,
-            color,
-          );
-          wordIdx.current.left = closest.refIndex + 1;
+        updateColorMemo(
+          currSlideIdx,
+          closest.refIndex,
+          closest.refIndex + 1,
+          color,
+        );
+        if ( wordIdx.current.right < closest.refIndex) {
           wordIdx.current.right = closest.refIndex + 1;
-        } else {
-          wordIdx.current.right = wordIdx.current.right + 1;
         }
       }
     });
@@ -303,6 +325,7 @@ const App: React.FC = () => {
         onPress={startVosk ? stopRec : startRec}
       />
       <FlatList
+        ref={flatListRef}
         style={styles.scriptSlideContainer}
         data={scriptData}
         renderItem={({item}) => (
@@ -325,7 +348,7 @@ const App: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: 15,
   },
   scriptSlideContainer: {
     backgroundColor: '#FFF',

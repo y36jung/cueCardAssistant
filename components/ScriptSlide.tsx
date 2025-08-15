@@ -64,12 +64,11 @@ const ScriptSlide: React.FC<ScriptSlideProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1, // Fill parent (FlatList page)
+    padding: 10
   },
   textContainer: {
     flexWrap: 'wrap',
-    flexDirection: 'row',
-    paddingLeft: 7,
-    paddingRight: 7
+    flexDirection: 'row'
   },
   slideHeader: {
     fontSize: 40,
