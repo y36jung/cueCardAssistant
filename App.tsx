@@ -8,6 +8,8 @@ import {
   PermissionsAndroid,
   ScrollView,
   FlatList,
+  TouchableOpacity,
+  Text,
 } from 'react-native';
 //import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import ScriptSlide from './components/ScriptSlide.tsx';
@@ -73,7 +75,6 @@ Design for implementing semantic search via onnx runtime
 */
 
 const App: React.FC = () => {
-  const vosk = useRef(new Vosk()).current;
   const [startVosk, setStartVosk] = useState<boolean>(false);
   const [scriptData, setScriptData] = useState<any[]>([
     {
@@ -83,10 +84,10 @@ const App: React.FC = () => {
     },
   ]);
   const [colorMemo, setColorMemo] = useState<Array<Array<string>>>();
-  const fuseOptions = {
-    includeScore: true,
-  };
   const [currSlideIdx, setCurrSlideIdx] = useState<number>(0);
+
+  // useRef
+  const vosk = useRef(new Vosk()).current;
   const flatListRef = useRef<FlatList | null>(null);
   const scrollViewRef = useRef<(ScrollView | null)[]>([]);
   const textPositionsRef = useRef<number[][]>([[]]);
@@ -138,20 +139,31 @@ const App: React.FC = () => {
 
   //ScrollTo
   useEffect(() => {
-    console.log(scrollViewRef.current[currSlideIdx+1], textPositionsRef.current, wordIdx.current);
-    if (startVosk && scrollViewRef.current && scrollViewRef.current[currSlideIdx]) {
-      if (wordIdx.current.groupStart >= textPositionsRef.current[currSlideIdx].length) {
-        wordIdx.current = {left: 0, right: 1, groupStart: 0}
+    console.log(
+      scrollViewRef.current[currSlideIdx + 1],
+      textPositionsRef.current,
+      wordIdx.current,
+    );
+    if (
+      startVosk &&
+      scrollViewRef.current &&
+      scrollViewRef.current[currSlideIdx]
+    ) {
+      if (
+        wordIdx.current.groupStart >=
+        textPositionsRef.current[currSlideIdx].length
+      ) {
+        wordIdx.current = {left: 0, right: 1, groupStart: 0};
         flatListRef.current?.scrollToIndex({
-          index: currSlideIdx+1,
+          index: currSlideIdx + 1,
           animated: true,
         });
-        setCurrSlideIdx(prev => (prev+1))
-        console.log('next slide: ', currSlideIdx)
+        setCurrSlideIdx(prev => prev + 1);
+        console.log('next slide: ', currSlideIdx);
       } else {
         console.log(
           'scrollTo: ',
-          textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart]
+          textPositionsRef.current[currSlideIdx][wordIdx.current.groupStart],
         );
         console.log(scrollViewRef.current);
         scrollViewRef.current[currSlideIdx].scrollTo({
@@ -220,6 +232,9 @@ const App: React.FC = () => {
   // };
 
   const searchInScript = (scriptIdx: number, wordIdx: any, word: string) => {
+    const fuseOptions = {
+      includeScore: true,
+    };
     const fuse = new Fuse(scriptData[scriptIdx].compare, fuseOptions);
     const result = fuse
       .search(word)
@@ -296,7 +311,7 @@ const App: React.FC = () => {
           closest.refIndex + 1,
           color,
         );
-        if ( wordIdx.current.right < closest.refIndex) {
+        if (wordIdx.current.right < closest.refIndex) {
           wordIdx.current.right = closest.refIndex + 1;
         }
       }
@@ -320,10 +335,11 @@ const App: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Button
-        title={startVosk ? 'Stop Recording' : 'Start Recording'}
+      <TouchableOpacity
         onPress={startVosk ? stopRec : startRec}
-      />
+        style={styles.recordButton}>
+        <Text style={{fontSize: 40}}>{startVosk ? '⏸️' : '▶️'}</Text>
+      </TouchableOpacity>
       <FlatList
         ref={flatListRef}
         style={styles.scriptSlideContainer}
@@ -347,11 +363,17 @@ const App: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 15,
-  },
+  container: {},
   scriptSlideContainer: {
     backgroundColor: '#FFF',
+  },
+  recordButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    zIndex: 1,
   },
 });
 

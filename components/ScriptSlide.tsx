@@ -14,7 +14,7 @@ interface ScriptSlideProps {
   visual: string[];
   getColorMemo: (slideIdx: number, wordIdx: number) => string;
   scrollViewRef: (ScrollView | null)[];
-  textPositionsRef: number[][]
+  textPositionsRef: number[][];
 }
 
 const {height: SCREEN_HEIGHT} = Dimensions.get('window');
@@ -24,9 +24,8 @@ const ScriptSlide: React.FC<ScriptSlideProps> = ({
   visual,
   getColorMemo,
   scrollViewRef,
-  textPositionsRef
+  textPositionsRef,
 }) => {
-  
   return (
     <View style={styles.container}>
       {visual ? (
@@ -34,8 +33,9 @@ const ScriptSlide: React.FC<ScriptSlideProps> = ({
           <Text style={styles.slideHeader}>{`Slide ${id + 1}`}</Text>
           <View style={styles.scrollContainer}>
             <ScrollView
-              ref={(el) => {scrollViewRef[id]= el}}
-              contentContainerStyle={styles.scrollContent}
+              ref={el => {
+                scrollViewRef[id] = el;
+              }}
               horizontal={false}
               nestedScrollEnabled={true} // android only
             >
@@ -45,7 +45,7 @@ const ScriptSlide: React.FC<ScriptSlideProps> = ({
                     key={idx}
                     style={{...styles.scriptText, color: getColorMemo(id, idx)}}
                     onLayout={e => {
-                      textPositionsRef[id][idx] = e.nativeEvent.layout.y
+                      textPositionsRef[id][idx] = e.nativeEvent.layout.y;
                     }}>
                     {word}
                   </Text>
@@ -63,21 +63,20 @@ const ScriptSlide: React.FC<ScriptSlideProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Fill parent (FlatList page)
-    padding: 10
+    height: SCREEN_HEIGHT,
+    width: '90%',
+    alignSelf: 'center',
+  },
+  scrollContainer: {
+    height: '90%',
+    alignItems: 'center',
   },
   textContainer: {
     flexWrap: 'wrap',
-    flexDirection: 'row'
+    flexDirection: 'row',
   },
   slideHeader: {
     fontSize: 40,
-  },
-  scrollContainer: {
-    height: SCREEN_HEIGHT - 95,
-  },
-  scrollContent: {
-    alignItems: 'center',
   },
   scriptText: {
     fontSize: 20,
