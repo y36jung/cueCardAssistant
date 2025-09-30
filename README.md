@@ -27,6 +27,7 @@ sentence-transformers/all-MiniLM-L6-v2 (Semantic Search)
 
 
 ## Future Additions
+- Integrate on-device AI model for semantic search for improved processing speed
 - Integrate WebSocket connection for automated slide transitions
 - Integrate local/online script storage system via local storage and GCP
 - Improve UX/UI for smoother user experience
