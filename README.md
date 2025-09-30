@@ -10,14 +10,14 @@ Using FastAPI, voice recognition and semantic search AI models are leveraged for
 
 ## Tech Stack
 ### Frontend:
-React-Native (TypeScript)
+- React-Native (TypeScript)
 
 ### Backend:
-FastAPI (Python)
+- FastAPI (Python)
 
 ### AI Models:
-Vosk AI (Voice Recognition)
-sentence-transformers/all-MiniLM-L6-v2 (Semantic Search)
+- Vosk AI (Voice Recognition)
+- sentence-transformers/all-MiniLM-L6-v2 (Semantic Search)
 
 
 ## Functionalities
@@ -31,3 +31,7 @@ sentence-transformers/all-MiniLM-L6-v2 (Semantic Search)
 - Integrate WebSocket connection for automated slide transitions
 - Integrate local/online script storage system via local storage and GCP
 - Improve UX/UI for smoother user experience
+
+
+## Tech Demo
+1. Interim Tech Demo 1: https://www.youtube.com/watch?v=R-6jZCe5FfE
