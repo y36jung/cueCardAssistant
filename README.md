@@ -13,7 +13,7 @@ This is simply a personal side-project done for my own learning.
 
 ## 📚 Tech Stack
 ### 👁️ Frontend:
-- React-Native (TypeScript)
+- React Native (TypeScript)
 
 ### 🤝 Backend:
 - FastAPI (Python)
