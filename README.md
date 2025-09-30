@@ -29,7 +29,7 @@ This is simply a personal side-project done for my own learning.
 - Once all words are detected in current page, the app turns to the next page
 
 
-## 🤔 Future Additions
+## 🤔 Future Improvements/Add-ons
 - Integrate on-device AI model for semantic search for improved processing speed
 - Integrate WebSocket connection for automated slide transitions
 - Integrate local/online script storage system via local storage and GCP
