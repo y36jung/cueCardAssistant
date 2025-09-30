@@ -74,6 +74,19 @@ Design for implementing semantic search via onnx runtime
 
 */
 
+/*
+SQLite database
+- create/open database
+- If there are no scripts stored in database --> show user indicator that no scripts are saved
+- else --> show all scripts stored in database as group of tiles
+  - user should be directed to app when tile is selected
+
+- '+' button on bottom-right side of app for adding new script
+  - give option to import script data from:
+    - local directory
+    - google cloud
+*/
+
 const App: React.FC = () => {
   const [startVosk, setStartVosk] = useState<boolean>(false);
   const [scriptData, setScriptData] = useState<any[]>([

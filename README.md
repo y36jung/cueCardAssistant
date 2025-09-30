@@ -1,39 +1,32 @@
-### Connecting real device to app:
+# Virtual Cue Card Assistant
 
-# Check if Android Debug Brdige is in the system's PATH:
+## Motivation:
+The current form of presentation is terrible. Flipping through cue cards, controlling slides, and the short pauses during slide transitions felt long enough to break the immersion of story-telling, which is not ideal for the generation's tendency to reach for their mobile devices.
 
-adb version
+To solve this problem, I have built a mobile app using React Native. The Virtual Cue Card Assistant is an app that detects voice input and tracks the progress of the script reading, similar to that of a karaoke machine.
 
-# If not, run following in terminal
-
-export PATH=$PATH:~/Library/Android/sdk/platform-tools 
-source ~/.zshrc
-
-# Check connected devices:
-
-adb devices
+Using FastAPI, voice recognition and semantic search AI models are leveraged for the functionalities stated above. With the addition of WebSocket connections between the app and the presentation computer, the slides are automatically controlled by speech for smooth, hands-free transition of slides.
 
 
+## Tech Stack
+### Frontend:
+React-Native (TypeScript)
+
+### Backend:
+FastAPI (Python)
+
+### AI Models:
+Vosk AI (Voice Recognition)
+sentence-transformers/all-MiniLM-L6-v2 (Semantic Search)
 
 
-### Testing on Android Device:
+## Functionalities
+- Takes voice input and indicates said words in green on current page
+- Page scolls (if possible) such that detected words are positioned to the top of the screen
+- Once all words are detected in current page, the app turns to the next page
 
-npx react-native run-android
 
-
-
-
-### Establishing WebSocket Connection:
-
-# Run websocket service code:
-python3 ws_listener.py
-
-## IF ABOVE DOES NOT WORK
-# First, start virtual environment:
-
-source activate venv 
-
-# To close virtual environment:
-
-source deactivate
-
+## Future Additions
+- Integrate WebSocket connection for automated slide transitions
+- Integrate local/online script storage system via local storage and GCP
+- Improve UX/UI for smoother user experience
